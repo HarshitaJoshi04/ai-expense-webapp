@@ -4,7 +4,18 @@ import { asyncHandler } from "@/utils/asyncHandler";
 import { ApiResponse } from "@/utils/ApiResponse";
 import { ApiError } from "@/utils/ApiError";
 
+// Why this file exists:
+// This is the core API Route for managing expenses. It handles:
+// - POST requests: Save a new manual or AI-extracted expense to MongoDB.
+// - GET requests: Retrieve all saved expenses sorted by creation date.
+//
+// Next.js Route Handler HTTP Mapping:
+// In Next.js App Router, we export functions named after HTTP verbs (GET, POST, etc.) 
+// to handle different requests hitting the same path.
+// Every request first invokes `await connectDB()` to ensure our database connection is hot.
+
 export const POST = asyncHandler(async (req: Request) => {
+
   await connectDB();
 
   const body = await req.json();

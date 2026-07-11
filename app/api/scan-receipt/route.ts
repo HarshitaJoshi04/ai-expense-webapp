@@ -2,7 +2,17 @@ import { asyncHandler } from "@/utils/asyncHandler";
 import { ApiResponse } from "@/utils/ApiResponse";
 import { ApiError } from "@/utils/ApiError";
 
+// Why this file exists:
+// This API Route handles receipt scanning. It receives a Cloudinary image URL and sends it
+// to the external OCR.Space API. OCR.Space reads the image and returns the raw parsed text.
+//
+// Integration Concept:
+// We communicate with OCR.Space using `fetch` inside a POST request.
+// The OCR.Space API expects parameters encoded as `application/x-www-form-urlencoded`.
+// We achieve this in JS by passing a `new URLSearchParams({...})` body.
+
 export const POST = asyncHandler(
+
   async (req: Request) => {
 
     const body = await req.json();
