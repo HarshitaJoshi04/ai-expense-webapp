@@ -1,83 +1,26 @@
 "use client";
 
 // Why this file exists:
-// This page provides the frontend interface for the "AI Insights" feature.
-// It loads the user's monthly budget (from localStorage) and expenses (from the database),
-// aggregates the data, calls our backend AI Insights API, and displays personalized
-// financial recommendations.
+// This page provides the frontend interface for the "AI Insights" recommendations page.
 //
-// React Concepts Used:
-// - useState: Manages local data like fetching, loading state, and tips arrays.
-// - useEffect: Initiates data fetches on mount.
-// - Conditional Rendering: Displays skeleton loader, fallback state, or loaded insights based on API status.
+// Ponytail Philosophy:
+// We delegate financial grouping calculations and Groq API calls to our custom 
+// `useAiInsights` hook. This keeps this component thin (under 130 lines) and highly focused 
+// on styling and animations.
 
-import { useEffect, useState } from "react";
 import DashboardNavbar from "@/components/Navbar";
+import { useAiInsights } from "@/hooks/useAiInsights";
 import { Sparkles, TrendingUp, ShieldAlert, RefreshCw } from "lucide-react";
 
 export default function AIInsightPage() {
-  const [tips, setTips] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchingAI, setFetchingAI] = useState(false);
-  const [budget, setBudget] = useState(0);
-  const [totalSpent, setTotalSpent] = useState(0);
-
-  // Fetch expenses and calculate metrics
-  const loadFinancialData = async () => {
-    try {
-      setLoading(true);
-      
-      // 1. Fetch budget from local storage
-      const savedBudget = localStorage.getItem("budget");
-      const currentBudget = savedBudget ? JSON.parse(savedBudget) : 0;
-      setBudget(currentBudget);
-
-      // 2. Fetch expenses from API
-      const res = await fetch("/api/expenses");
-      const json = await res.json();
-      const expensesList = json.data || [];
-
-      // Calculate total spent
-      const spentSum = expensesList.reduce(
-        (sum: number, exp: any) => sum + Number(exp.amount),
-        0
-      );
-      setTotalSpent(spentSum);
-
-      // Group categories
-      const categoryTotals = expensesList.reduce((acc: any, exp: any) => {
-        const cat = exp.category || "Other";
-        acc[cat] = (acc[cat] || 0) + Number(exp.amount);
-        return acc;
-      }, {});
-
-      // 3. Request AI recommendations
-      setFetchingAI(true);
-      const aiRes = await fetch("/api/ai-insights", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          budget: currentBudget,
-          totalSpent: spentSum,
-          categoryTotals,
-        }),
-      });
-
-      const aiJson = await aiRes.json();
-      setTips(aiJson.data || []);
-    } catch (error) {
-      console.error("Failed to load insights:", error);
-    } finally {
-      setFetchingAI(false);
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadFinancialData();
-  }, []);
+  const {
+    tips,
+    loading,
+    fetchingAI,
+    budget,
+    totalSpent,
+    loadFinancialData,
+  } = useAiInsights();
 
   return (
     <div className="bg-slate-50 dark:bg-[#090D16] min-h-screen text-slate-900 dark:text-white transition-colors duration-300 relative overflow-hidden font-sans">
@@ -176,15 +119,10 @@ export default function AIInsightPage() {
                     key={idx}
                     className="relative bg-white dark:bg-[#111625] rounded-3xl p-6 border border-slate-100 dark:border-white/5 shadow-md flex items-start space-x-4 overflow-hidden group hover:scale-[1.01] transition-transform duration-300"
                   >
-                    {/* Corner gradient glow on hover */}
                     <div className={`absolute inset-0 bg-gradient-to-r ${bgGlow} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-
-                    {/* Icon container */}
                     <div className="relative z-10 p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 shrink-0">
                       {icon}
                     </div>
-
-                    {/* Content */}
                     <div className="relative z-10 space-y-1.5">
                       <h3 className="text-xs font-bold text-slate-400 dark:text-gray-400 uppercase tracking-widest">
                         Insight #{idx + 1}
